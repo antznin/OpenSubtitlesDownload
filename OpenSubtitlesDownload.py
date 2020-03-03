@@ -51,6 +51,10 @@ else: # python2
     import urllib
     from xmlrpclib import ServerProxy, Error
 
+# ==== Quiet setting ===========================================================
+
+quiet = False
+
 # ==== Opensubtitles.org server settings =======================================
 
 # XML-RPC server domain for opensubtitles.org:
@@ -133,28 +137,29 @@ opt_selection_count    = 'off'
 
 def superPrint(priority, title, message):
     """Print messages through terminal, zenity or kdialog"""
-    if opt_gui == 'gnome':
-        subprocess.call(['zenity', '--width=' + str(opt_gui_width), '--' + priority, '--title=' + title, '--text=' + message])
-    elif opt_gui == 'kde':
-        # Adapt to kdialog
-        message = message.replace("\n", "<br>")
-        message = message.replace('\\"', '"')
-        if priority == 'warning':
-            priority = 'sorry'
-        elif priority == 'info':
-            priority = 'msgbox'
+    if not quiet:
+        if opt_gui == 'gnome':
+            subprocess.call(['zenity', '--width=' + str(opt_gui_width), '--' + priority, '--title=' + title, '--text=' + message])
+        elif opt_gui == 'kde':
+            # Adapt to kdialog
+            message = message.replace("\n", "<br>")
+            message = message.replace('\\"', '"')
+            if priority == 'warning':
+                priority = 'sorry'
+            elif priority == 'info':
+                priority = 'msgbox'
 
-        subprocess.call(['kdialog', '--geometry=' + str(opt_gui_width) + 'x' + str(opt_gui_height), '--title=' + title, '--' + priority + '=' + message])
-    else:
-        # Clean up formating tags from the zenity messages
-        message = message.replace("\n\n", "\n")
-        message = message.replace("<i>", "")
-        message = message.replace("</i>", "")
-        message = message.replace("<b>", "")
-        message = message.replace("</b>", "")
-        message = message.replace('\\"', '"')
+            subprocess.call(['kdialog', '--geometry=' + str(opt_gui_width) + 'x' + str(opt_gui_height), '--title=' + title, '--' + priority + '=' + message])
+        else:
+            # Clean up formating tags from the zenity messages
+            message = message.replace("\n\n", "\n")
+            message = message.replace("<i>", "")
+            message = message.replace("</i>", "")
+            message = message.replace("<b>", "")
+            message = message.replace("</b>", "")
+            message = message.replace('\\"', '"')
 
-        print(">> " + message)
+            print(">> " + message)
 
 # ==== Check file path & type ==================================================
 
@@ -499,6 +504,7 @@ parser.add_argument('-s', '--search', help="Search mode: hash, filename, hash_th
 parser.add_argument('-t', '--select', help="Selection mode: manual, default, auto")
 parser.add_argument('-a', '--auto', help="Trigger automatic selection and download of the best subtitles found", action='store_true')
 parser.add_argument('-o', '--output', help="Override subtitles download path, instead of next their video file")
+parser.add_argument('-q','--quiet', help="Make the program quiet", action='store_true')
 
 parser.add_argument('filePathListArg', help="The video file(s) for which subtitles should be searched and downloaded", nargs='+')
 
@@ -521,6 +527,8 @@ if len(sys.argv) > 1:
         opt_selection_mode = 'auto'
     if result.output:
         opt_output_path = result.output
+    if result.quiet:
+        quiet = result.quiet
     if result.lang:
         if opt_languages != result.lang:
             opt_languages = result.lang
@@ -551,7 +559,7 @@ if opt_gui not in ['gnome', 'kde', 'cli']:
     opt_gui = 'cli'
     opt_search_mode = 'hash_then_filename'
     opt_selection_mode = 'auto'
-    print("Unknown GUI, falling back to an automatic CLI mode")
+    # print("Unknown GUI, falling back to an automatic CLI mode")
 
 # ==== Check for the necessary tools (must be done after GUI auto detection)
 
@@ -797,7 +805,7 @@ try:
                 elif opt_gui == 'kde':
                     process_subtitlesDownload = subprocess.call("(wget -q -O - " + subURL + " | gunzip > " + subPath + ") 2>&1", shell=True)
                 else: # CLI
-                    print(">> Downloading '" + subtitlesList['data'][subIndex]['LanguageName'] + "' subtitles for '" + videoTitle + "'")
+                    # print(">> Downloading '" + subtitlesList['data'][subIndex]['LanguageName'] + "' subtitles for '" + videoTitle + "'")
 
                     if sys.version_info >= (3, 0):
                         tmpFile1, headers = urllib.request.urlretrieve(subURL)
